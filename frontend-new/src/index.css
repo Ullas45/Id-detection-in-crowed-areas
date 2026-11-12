@@ -1,0 +1,102 @@
+
+@import "tailwindcss";
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  min-height: 100vh;
+  margin: 0;
+}
+
+body {
+  background: #080b12;
+  color: white;
+  font-family: Arial, Helvetica, sans-serif;
+  overflow-x: hidden;
+}
+
+#root {
+  max-width: none;
+  padding: 0;
+}
+
+.home-page {
+  min-height: 100vh;
+  width: 100%;
+}
+
+.home-nav-inner,
+.home-main {
+  width: min(100% - 3rem, 80rem);
+  margin-inline: auto;
+}
+
+.home-nav-inner {
+  min-height: 4.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.home-main {
+  padding-block: 3rem;
+}
+
+.home-hero {
+  margin-bottom: 3rem;
+  text-align: center;
+}
+
+.home-hero-description {
+  max-width: 42rem;
+  margin: 1.25rem auto 0;
+  line-height: 2rem;
+}
+
+.home-feature-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: stretch;
+  gap: 1.5rem;
+  margin-bottom: 3rem;
+}
+
+.home-feature-card {
+  min-width: 0;
+  height: 100%;
+}
+
+.home-upload-section {
+  width: min(100%, 64rem);
+  margin-inline: auto;
+}
+
+.home-upload-panel {
+  width: 100%;
+}
+
+@media (max-width: 768px) {
+  .home-main {
+    padding-block: 2rem;
+  }
+
+  .home-feature-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .home-nav-inner,
+  .home-main {
+    width: calc(100% - 2rem);
+  }
+
+  .home-nav-inner {
+    gap: 1rem;
+  }
+}
