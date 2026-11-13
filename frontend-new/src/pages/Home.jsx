@@ -1,121 +1,168 @@
-
-
-import UploadBox from "../components/UploadBox";
 import {
-  Users,
-  Camera,
-  Activity
+  Activity,
+  ArrowDown,
+  ArrowRight,
+  ScanFace,
+  ShieldCheck,
+  Sparkles,
+  Users
 } from "lucide-react";
+import UploadBox from "../components/UploadBox";
+import crowdScanVisual from "../assets/crowd-scan.svg";
+
+const highlights = [
+  {
+    icon: Users,
+    title: "Crowd intelligence",
+    description: "Find and count people in busy scenes."
+  },
+  {
+    icon: ScanFace,
+    title: "Person matching",
+    description: "Look for one person across a photo or video."
+  },
+  {
+    icon: Activity,
+    title: "Video analytics",
+    description: "See detection results throughout the clip."
+  }
+];
 
 function Home() {
   return (
-    <div className="home-page min-h-screen w-full bg-[#080b12] text-white">
+    <div className="home-page">
+      <nav className="site-nav">
+        <a className="brand-lockup" href="#top" aria-label="CrowdVision AI home">
+          <span className="brand-mark">
+            <ScanFace size={21} strokeWidth={2.2} />
+          </span>
+          <span className="brand-name">
+            CrowdVision<span>AI</span>
+          </span>
+        </a>
 
-      {/* NAVBAR */}
-      <nav className="w-full border-b border-gray-800 bg-[#0b101a]">
-        <div className="home-nav-inner max-w-7xl mx-auto px-6 py-5
-                        flex justify-between items-center">
-
-          <h1 className="text-2xl font-bold">
-            CrowdVision
-            <span className="text-blue-500"> AI</span>
-          </h1>
-
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-            <span className="text-sm text-gray-400">
-              AI Online
-            </span>
+        <div className="nav-actions">
+          <a className="nav-link" href="#capabilities">Capabilities</a>
+          <a className="nav-cta" href="#workspace">
+            Open workspace <ArrowRight size={15} />
+          </a>
+          <div className="service-status">
+            <span className="status-dot" />
+            AI online
           </div>
-
         </div>
       </nav>
 
-      {/* MAIN CONTENT */}
-      <main className="home-main max-w-7xl mx-auto px-6 py-12">
+      <main id="top">
+        <section className="hero-section">
+          <div className="hero-copy">
+            <div className="eyebrow">
+              <Sparkles size={14} />
+              <span>AI-POWERED CROWD ANALYTICS</span>
+            </div>
 
-        {/* HERO */}
-        <section className="home-hero text-center mb-12">
+            <h1>
+              Every face.
+              <br />
+              <span>In focus.</span>
+            </h1>
 
-          <p className="text-blue-400 font-semibold mb-4 tracking-wider">
-            AI POWERED CROWD ANALYTICS
-          </p>
+            <p className="hero-description">
+              Turn images and video into clear, actionable crowd insights.
+              Count everyone—or find the person you’re looking for.
+            </p>
 
-          <h1 className="text-4xl md:text-6xl font-bold">
-            Person Detection
-          </h1>
+            <div className="hero-actions">
+              <a className="primary-link" href="#workspace">
+                Start detecting <ArrowRight size={17} />
+              </a>
+              <a className="secondary-link" href="#capabilities">
+                Explore capabilities <ArrowDown size={16} />
+              </a>
+            </div>
 
-          <p className="home-hero-description text-gray-400 max-w-2xl mx-auto mt-5 leading-8">
-            Detect and count people in photos, or track
-            them across videos with AI-powered computer vision.
-          </p>
+            <div className="hero-trust">
+              <ShieldCheck size={17} />
+              <span>Your media stays on your server</span>
+            </div>
+          </div>
 
+          <div className="hero-visual">
+            <div className="visual-glow" />
+            <div className="visual-frame">
+              <img
+                src={crowdScanVisual}
+                alt="Illustrated crowd with person-detection boxes"
+              />
+              <div className="visual-caption">
+                <span className="caption-pulse" />
+                <span>VISION SYSTEM</span>
+                <span className="caption-live">READY</span>
+              </div>
+              <div className="visual-crosshair visual-crosshair-top" />
+              <div className="visual-crosshair visual-crosshair-bottom" />
+            </div>
+            <div className="floating-chip">
+              <span className="chip-icon"><Activity size={17} /></span>
+              <span>
+                <strong>Smart analysis</strong>
+                <small>Images · Video · People</small>
+              </span>
+            </div>
+            <div className="visual-index">01 <span>/</span> VISION</div>
+          </div>
         </section>
 
-        {/* FEATURE CARDS */}
-        <section className="home-feature-grid grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+        <section className="capabilities-section" id="capabilities">
+          <div className="section-heading">
+            <div>
+              <p className="section-kicker">BUILT FOR THE BIG PICTURE</p>
+              <h2>One platform. Clearer perspective.</h2>
+            </div>
+            <p className="section-aside">
+              Powerful vision tools, made refreshingly simple to use.
+            </p>
+          </div>
 
-          <StatCard
-            icon={<Users size={26} />}
-            title="Person Detection"
-            description="AI-powered person detection in crowded images."
-          />
-
-          <StatCard
-            icon={<Camera size={26} />}
-            title="Image Analysis"
-            description="Upload and analyze crowded images."
-          />
-
-          <StatCard
-            icon={<Activity size={26} />}
-            title="Smart Analytics"
-            description="Automatic people counting and analysis."
-          />
-
+          <div className="capability-grid">
+            {highlights.map(({ icon: Icon, title, description }, index) => (
+              <article className="capability-card" key={title}>
+                <span className="capability-number">0{index + 1}</span>
+                <span className="capability-icon"><Icon size={20} /></span>
+                <h3>{title}</h3>
+                <p>{description}</p>
+                <span className="capability-rule" />
+              </article>
+            ))}
+          </div>
         </section>
 
-        {/* IMAGE DETECTION */}
-        <section className="home-upload-section w-full max-w-5xl mx-auto">
+        <section className="workspace-section" id="workspace">
+          <div className="workspace-heading">
+            <div>
+              <p className="section-kicker">YOUR ANALYSIS STUDIO</p>
+              <h2>Let’s take a closer look.</h2>
+              <p>Choose an analysis mode and add your media to get started.</p>
+            </div>
+            <span className="workspace-badge">
+              <span className="status-dot" />
+              PRIVATE WORKSPACE
+            </span>
+          </div>
           <UploadBox />
         </section>
-
-        {/* FOOTER */}
-        <footer className="text-center border-t border-gray-800 mt-12 pt-8">
-
-          <p className="text-gray-400 text-sm">
-            CrowdVision AI © 2026
-          </p>
-
-          <p className="text-gray-500 text-xs mt-2">
-            Intelligent Crowd Detection System
-          </p>
-
-        </footer>
-
       </main>
-    </div>
-  );
-}
 
-function StatCard({ icon, title, description }) {
-  return (
-    <div className="home-feature-card bg-[#111827] border border-gray-800
-                    rounded-xl p-6 hover:border-blue-500
-                    transition duration-300">
-
-      <div className="text-blue-400 mb-4">
-        {icon}
-      </div>
-
-      <h3 className="font-bold text-lg mb-2">
-        {title}
-      </h3>
-
-      <p className="text-gray-400 text-sm leading-6">
-        {description}
-      </p>
-
+      <footer className="site-footer">
+        <a className="brand-lockup footer-brand" href="#top">
+          <span className="brand-mark">
+            <ScanFace size={18} strokeWidth={2.2} />
+          </span>
+          <span className="brand-name">CrowdVision<span>AI</span></span>
+        </a>
+        <p>See the people. Understand the picture.</p>
+        <span className="footer-copyright">© 2026 CrowdVision AI</span>
+      </footer>
     </div>
   );
 }

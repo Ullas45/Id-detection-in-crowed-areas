@@ -96,7 +96,7 @@ def detect_people_video(video_path):
                     source=frame,
                     persist=True,
                     tracker="bytetrack.yaml",
-                    conf=0.15,
+                    conf=0.25,
                     imgsz=640,
                     classes=[0],
                     verbose=False

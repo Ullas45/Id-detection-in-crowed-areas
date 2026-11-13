@@ -40,7 +40,7 @@ def detect_people(image_path):
 
         results = model.predict(
             source=image,
-            conf=0.10,
+            conf=0.25,
             imgsz=640,
             max_det=500,
             classes=[0],

@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="840" height="560" fill="none" viewBox="0 0 840 560">
+  <defs>
+    <linearGradient id="background" x1="62" x2="798" y1="35" y2="552" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#142438"/>
+      <stop offset=".52" stop-color="#101A2B"/>
+      <stop offset="1" stop-color="#0B1421"/>
+    </linearGradient>
+    <linearGradient id="floor" x1="420" x2="420" y1="270" y2="560" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1A3045" stop-opacity=".16"/>
+      <stop offset="1" stop-color="#0B111C" stop-opacity=".82"/>
+    </linearGradient>
+    <linearGradient id="scan" x1="150" x2="690" y1="0" y2="0" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#55D9CF" stop-opacity="0"/>
+      <stop offset=".5" stop-color="#55D9CF" stop-opacity=".8"/>
+      <stop offset="1" stop-color="#55D9CF" stop-opacity="0"/>
+    </linearGradient>
+    <radialGradient id="light" cx="0" cy="0" r="1" gradientTransform="matrix(0 287 -434 0 420 125)" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2B7190" stop-opacity=".35"/>
+      <stop offset="1" stop-color="#101A2B" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="grid" width="42" height="42" patternUnits="userSpaceOnUse">
+      <path stroke="#9BB9D6" stroke-opacity=".065" d="M42 0H0v42"/>
+    </pattern>
+    <filter id="glow" width="1.6" height="2.6" x="-.3" y="-.8" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="9"/>
+    </filter>
+    <symbol id="person" viewBox="0 0 60 136">
+      <ellipse cx="30" cy="21" fill="currentColor" rx="14" ry="17"/>
+      <path fill="currentColor" d="M7 44c4-8 12-12 23-12s19 4 23 12l8 49-9 5-2 40H10l-2-40-9-5 8-49Z"/>
+      <path fill="#101A2B" fill-opacity=".2" d="m19 46 11 8 11-8 7 50H12l7-50Z"/>
+    </symbol>
+  </defs>
+
+  <rect width="840" height="560" fill="url(#background)"/>
+  <rect width="840" height="560" fill="url(#light)"/>
+  <rect width="840" height="560" fill="url(#grid)"/>
+  <path fill="url(#floor)" d="M0 355c156-62 268-82 420-82s264 20 420 82v205H0V355Z"/>
+  <path stroke="#81A6C8" stroke-opacity=".12" d="M0 355c156-62 268-82 420-82s264 20 420 82M73 560l172-287m522 287L595 273M246 560l92-287m256 287-92-287M420 560V273"/>
+
+  <g opacity=".6" style="color:#7890B0">
+    <use href="#person" x="50" y="145" width="48" height="109"/>
+    <use href="#person" x="130" y="130" width="45" height="103"/>
+    <use href="#person" x="223" y="144" width="52" height="119"/>
+    <use href="#person" x="310" y="126" width="45" height="104"/>
+    <use href="#person" x="408" y="137" width="52" height="119"/>
+    <use href="#person" x="510" y="128" width="46" height="106"/>
+    <use href="#person" x="604" y="142" width="51" height="117"/>
+    <use href="#person" x="708" y="127" width="47" height="108"/>
+  </g>
+
+  <g opacity=".93">
+    <use href="#person" x="54" y="231" width="78" height="179" style="color:#547FA8"/>
+    <use href="#person" x="154" y="251" width="66" height="151" style="color:#A86C83"/>
+    <use href="#person" x="248" y="222" width="83" height="190" style="color:#347F83"/>
+    <use href="#person" x="349" y="245" width="75" height="172" style="color:#8871AB"/>
+    <use href="#person" x="452" y="224" width="87" height="199" style="color:#B07D50"/>
+    <use href="#person" x="558" y="245" width="77" height="177" style="color:#4B8292"/>
+    <use href="#person" x="665" y="224" width="84" height="193" style="color:#A25F69"/>
+    <use href="#person" x="761" y="251" width="66" height="151" style="color:#647FA3"/>
+  </g>
+
+  <g stroke="#68E0CE" stroke-width="2">
+    <path d="M54 231h78m-78 0v12m78-12v12m-78 179h78m-78 0v-12m78 12v-12" opacity=".8"/>
+    <path d="M248 222h83m-83 0v12m83-12v12m-83 190h83m-83 0v-12m83 12v-12"/>
+    <path d="M452 224h87m-87 0v12m87-12v12m-87 199h87m-87 0v-12m87 12v-12"/>
+    <path d="M665 224h84m-84 0v12m84-12v12m-84 193h84m-84 0v-12m84 12v-12" opacity=".87"/>
+  </g>
+
+  <g fill="#9AF3DF" font-family="Arial, sans-serif" font-size="12" font-weight="600" letter-spacing="1.4">
+    <text x="54" y="216">PERSON 01</text>
+    <text x="248" y="207">PERSON 02</text>
+    <text x="452" y="209">PERSON 03</text>
+    <text x="665" y="209">PERSON 04</text>
+  </g>
+
+  <path d="M0 312h840" filter="url(#glow)" stroke="#57E4D2" stroke-opacity=".85" stroke-width="13"/>
+  <path d="M0 312h840" stroke="url(#scan)" stroke-width="2"/>
+  <circle cx="420" cy="312" r="4" fill="#9AF3DF"/>
+  <path stroke="#A8C6E5" stroke-opacity=".18" d="M24 24h24m-24 0v24m768-24h-24m24 0v24M24 536h24m-24 0v-24m768 24h-24m24 0v-24"/>
+</svg>
