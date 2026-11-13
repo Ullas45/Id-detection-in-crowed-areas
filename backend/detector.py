@@ -1,157 +1,138 @@
 
-from ultralytics import YOLO
 import cv2
-import os
+import uuid
+from pathlib import Path
+from threading import Lock
+from ultralytics import YOLO
 
-# =====================================
-# 1. LOAD YOLO11 MODEL
-# =====================================
+# -----------------------------------
+# CONFIGURATION
+# -----------------------------------
 
-model = YOLO("yolo11n.pt")
+BASE_DIR = Path(__file__).resolve().parent
+
+OUTPUT_DIR = BASE_DIR / "outputs"
+OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+
+MODEL_PATH = BASE_DIR / "yolo11n.pt"
+
+model = YOLO(str(MODEL_PATH))
+
+# Prevent simultaneous model inference
+model_lock = Lock()
 
 
-# =====================================
-# 2. PERSON DETECTION FUNCTION
-# =====================================
+# -----------------------------------
+# IMAGE PERSON DETECTION
+# -----------------------------------
 
 def detect_people(image_path):
 
-    # Read input image
-    image = cv2.imread(image_path)
+    image = cv2.imread(str(image_path))
 
     if image is None:
-        raise ValueError(
-            f"Unable to read image: {image_path}"
-        )
+        raise ValueError("Unable to read uploaded image")
 
-    # Run improved YOLO detection
-    results = model.predict(
-        source=image,
-        conf=0.20,
-        imgsz=1280,
-        max_det=500,
-        classes=[0],
-        iou=0.45,
-        agnostic_nms=True,
-        verbose=False
-    )
+    print("Starting image detection...")
+
+    # Run YOLO detection
+    with model_lock:
+
+        results = model.predict(
+            source=image,
+            conf=0.10,
+            imgsz=640,
+            max_det=500,
+            classes=[0],
+            iou=0.50,
+            agnostic_nms=False,
+            verbose=False
+        )
 
     person_count = 0
 
     # Process detection results
     for result in results:
 
+        if result.boxes is None:
+            continue
+
         for box in result.boxes:
 
             class_id = int(box.cls[0])
 
             # COCO class 0 = Person
-            if class_id == 0:
+            if class_id != 0:
+                continue
 
-                person_count += 1
+            person_count += 1
 
-                # Bounding box coordinates
-                x1, y1, x2, y2 = map(
-                    int, box.xyxy[0]
-                )
+            x1, y1, x2, y2 = map(
+                int,
+                box.xyxy[0].tolist()
+            )
 
-                # Confidence score
-                confidence = float(box.conf[0])
+            confidence = float(box.conf[0])
 
-                # Draw bounding box
-                cv2.rectangle(
-                    image,
-                    (x1, y1),
-                    (x2, y2),
-                    (0, 255, 0),
-                    2
-                )
+            # Draw bounding box
+            cv2.rectangle(
+                image,
+                (x1, y1),
+                (x2, y2),
+                (0, 255, 0),
+                2
+            )
 
-                # Display person label
-                cv2.putText(
-                    image,
-                    f"Person {confidence:.2f}",
-                    (x1, max(y1 - 10, 20)),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    0.5,
-                    (0, 255, 0),
-                    2
-                )
+            # Person label
+            label = f"Person {confidence:.2f}"
 
-    # =====================================
-    # 3. SAVE DETECTED IMAGE
-    # =====================================
+            cv2.putText(
+                image,
+                label,
+                (x1, max(y1 - 10, 20)),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.5,
+                (0, 255, 0),
+                2
+            )
 
-    base_dir = os.path.dirname(
-        os.path.abspath(__file__)
+    # Display total people
+    cv2.rectangle(
+        image,
+        (10, 10),
+        (350, 60),
+        (0, 0, 0),
+        -1
     )
 
-    output_dir = os.path.join(
-        base_dir,
-        "outputs"
+    cv2.putText(
+        image,
+        f"Total People: {person_count}",
+        (20, 45),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        0.8,
+        (0, 255, 255),
+        2
     )
 
-    os.makedirs(output_dir, exist_ok=True)
+    # Save output
+    output_filename = f"detected_{uuid.uuid4().hex}.jpg"
 
-    output_path = os.path.join(
-        output_dir,
-        "detected_image.jpg"
-    )
+    output_path = OUTPUT_DIR / output_filename
 
     success = cv2.imwrite(
-        output_path,
+        str(output_path),
         image
     )
 
     if not success:
-        raise RuntimeError("Unable to save output image")
+        raise RuntimeError("Unable to save detected image")
 
-    # =====================================
-    # 4. RETURN RESULTS
-    # =====================================
+    print("Image detection completed")
+    print("People detected:", person_count)
+    print("Output:", output_path)
 
     return {
         "person_count": person_count,
-        "output_path": output_path
+        "output_path": str(output_path)
     }
-
-
-# =====================================
-# 5. MAIN PROGRAM
-# =====================================
-
-if __name__ == "__main__":
-
-    base_dir = os.path.dirname(
-        os.path.abspath(__file__)
-    )
-
-    # Input image
-    image_path = os.path.join(
-        base_dir,
-        "crowd.png"
-    )
-
-    print("Starting CrowdVision AI...")
-    print("Input Image:", image_path)
-
-    if not os.path.exists(image_path):
-        print("ERROR: crowd.png not found!")
-    else:
-
-        result = detect_people(image_path)
-
-        print("\n========== DETECTION RESULTS ==========")
-
-        print(
-            "Total People Detected:",
-            result["person_count"]
-        )
-
-        print(
-            "Output Image:",
-            result["output_path"]
-        )
-
-        print("=======================================")
-        print("Detection Completed Successfully!")

@@ -1,164 +1,274 @@
 
+import uuid
+import logging
+
+from pathlib import Path
+
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
+from starlette.concurrency import run_in_threadpool
+
 from detector import detect_people
-
-import os
-import uuid
-import shutil
+from video_processor import detect_people_video
 
 
-# =====================================
-# 1. CREATE FASTAPI APPLICATION
-# =====================================
+# ------------------------------------
+# CONFIGURATION
+# ------------------------------------
+
+BASE_DIR = Path(__file__).resolve().parent
+
+UPLOAD_DIR = BASE_DIR / "uploads"
+OUTPUT_DIR = BASE_DIR / "outputs"
+
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+
+logging.basicConfig(level=logging.INFO)
+
+logger = logging.getLogger("CrowdVisionAI")
+
+
+# ------------------------------------
+# FASTAPI APPLICATION
+# ------------------------------------
 
 app = FastAPI(
     title="CrowdVision AI",
-    description="AI Based Crowd Person Detection System",
+    description="AI-powered Crowd Detection System",
     version="1.0"
 )
 
 
-# =====================================
-# 2. ENABLE CORS
-# =====================================
+# ------------------------------------
+# CORS CONFIGURATION
+# ------------------------------------
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:5174",
+        "http://127.0.0.1:5174"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=["*"],
+    allow_headers=["*"]
 )
 
 
-# =====================================
-# 3. CREATE DIRECTORIES
-# =====================================
+# ------------------------------------
+# SERVE OUTPUT IMAGES AND VIDEOS
+# ------------------------------------
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
-UPLOAD_DIR = os.path.join(BASE_DIR, "uploads")
-OUTPUT_DIR = os.path.join(BASE_DIR, "outputs")
-
-os.makedirs(UPLOAD_DIR, exist_ok=True)
-os.makedirs(OUTPUT_DIR, exist_ok=True)
-
-
-# Serve processed images
 app.mount(
     "/outputs",
-    StaticFiles(directory=OUTPUT_DIR),
+    StaticFiles(directory=str(OUTPUT_DIR)),
     name="outputs"
 )
 
 
-# =====================================
-# 4. HOME API
-# =====================================
+# ------------------------------------
+# HOME
+# ------------------------------------
 
 @app.get("/")
 def home():
 
     return {
-        "message": "Welcome to CrowdVision AI",
-        "status": "Backend Running"
+        "message": "CrowdVision AI Backend",
+        "status": "online"
     }
 
 
-# =====================================
-# 5. HEALTH CHECK API
-# =====================================
+# ------------------------------------
+# HEALTH CHECK
+# ------------------------------------
 
 @app.get("/health")
 def health():
 
     return {
-        "status": "healthy",
-        "project": "CrowdVision AI"
+        "status": "online"
     }
 
 
-# =====================================
-# 6. IMAGE DETECTION API
-# =====================================
+# ------------------------------------
+# IMAGE DETECTION
+# ------------------------------------
 
 @app.post("/detect/image")
-async def detect_image(file: UploadFile = File(...)):
+async def image_detection(file: UploadFile = File(...)):
 
-    allowed_types = {
-        "image/jpeg",
-        "image/png"
-    }
+    allowed_extensions = [".jpg", ".jpeg", ".png"]
 
-    if file.content_type not in allowed_types:
+    extension = Path(file.filename or "").suffix.lower()
+
+    if extension not in allowed_extensions:
+
         raise HTTPException(
             status_code=400,
-            detail="Only JPG and PNG images are supported"
+            detail="Only JPG, JPEG and PNG are supported"
         )
 
-    # Create unique filename
-    extension = os.path.splitext(file.filename or "")[1].lower()
-
-    if extension not in [".jpg", ".jpeg", ".png"]:
-        raise HTTPException(
-            status_code=400,
-            detail="Invalid image extension"
-        )
-
-    filename = f"{uuid.uuid4()}{extension}"
-
-    input_path = os.path.join(
-        UPLOAD_DIR,
-        filename
-    )
+    input_path = UPLOAD_DIR / f"{uuid.uuid4().hex}{extension}"
 
     try:
 
-        # Save uploaded image
         content = await file.read()
 
         if not content:
+
             raise HTTPException(
                 status_code=400,
                 detail="Uploaded image is empty"
             )
 
         if len(content) > 20 * 1024 * 1024:
+
             raise HTTPException(
                 status_code=413,
-                detail="Image must be smaller than 20 MB"
+                detail="Image exceeds 20 MB"
             )
 
-        with open(input_path, "wb") as f:
-            f.write(content)
+        input_path.write_bytes(content)
 
-        # Run YOLO detection
-        result = detect_people(input_path)
+        logger.info("Starting image detection")
 
-        output_filename = os.path.basename(
-            result["output_path"]
+        # Call existing image detector
+        result = await run_in_threadpool(
+            detect_people,
+            str(input_path)
+        )
+
+        output_path = Path(result["output_path"])
+
+        if not output_path.exists():
+
+            raise RuntimeError(
+                "Detected image was not generated"
+            )
+
+        logger.info(
+            "Image detection completed. People: %s",
+            result["person_count"]
         )
 
         return {
             "success": True,
-            "message": "Detection completed",
             "person_count": result["person_count"],
-            "output_image": f"/outputs/{output_filename}"
+            "output_image": f"/outputs/{output_path.name}"
         }
 
     except HTTPException:
         raise
 
-    except Exception as e:
+    except Exception as error:
+
+        logger.exception("Image detection failed")
+
         raise HTTPException(
             status_code=500,
-            detail=str(e)
+            detail=str(error)
         )
 
     finally:
 
-        if os.path.exists(input_path):
-            os.remove(input_path)
+        await file.close()
+
+        if input_path.exists():
+            input_path.unlink()
+
+
+# ------------------------------------
+# VIDEO DETECTION
+# ------------------------------------
+
+@app.post("/detect/video")
+async def video_detection(file: UploadFile = File(...)):
+
+    allowed_extensions = [".mp4", ".avi", ".mov"]
+
+    extension = Path(file.filename or "").suffix.lower()
+
+    if extension not in allowed_extensions:
+
+        raise HTTPException(
+            status_code=400,
+            detail="Only MP4, AVI and MOV videos are supported"
+        )
+
+    input_path = UPLOAD_DIR / f"{uuid.uuid4().hex}{extension}"
+
+    try:
+
+        content = await file.read()
+
+        if not content:
+
+            raise HTTPException(
+                status_code=400,
+                detail="Uploaded video is empty"
+            )
+
+        if len(content) > 100 * 1024 * 1024:
+
+            raise HTTPException(
+                status_code=413,
+                detail="Video exceeds 100 MB"
+            )
+
+        input_path.write_bytes(content)
+
+        logger.info("Starting video detection")
+
+        # Call existing video processor
+        result = await run_in_threadpool(
+            detect_people_video,
+            str(input_path)
+        )
+
+        output_path = Path(result["output_path"])
+
+        if not output_path.exists() or output_path.stat().st_size == 0:
+
+            raise RuntimeError(
+                "Processed video was not generated"
+            )
+
+        logger.info(
+            "Video detection completed. Frames: %s",
+            result["processed_frames"]
+        )
+
+        return {
+            "success": True,
+            "message": "Video detection completed",
+            "unique_person_count": result["unique_person_count"],
+            "max_people_in_frame": result["max_people_in_frame"],
+            "average_people_per_frame": result["average_people_per_frame"],
+            "processed_frames": result["processed_frames"],
+            "output_video": f"/outputs/{output_path.name}"
+        }
+
+    except HTTPException:
+        raise
+
+    except Exception as error:
+
+        logger.exception("Video detection failed")
+
+        raise HTTPException(
+            status_code=500,
+            detail=str(error)
+        )
+
+    finally:
+
+        await file.close()
+
+        if input_path.exists():
+            input_path.unlink()

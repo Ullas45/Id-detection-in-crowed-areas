@@ -1,40 +1,67 @@
 
-import { useState } from "react";
-import { detectImage } from "../services/api";
-import {
-  Upload,
-  LoaderCircle,
-  Scan
-} from "lucide-react";
+import { useEffect, useState } from "react";
+
+const API_BASE =
+  import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
 
 function UploadBox() {
 
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState("");
   const [result, setResult] = useState(null);
-  const [cacheBuster, setCacheBuster] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const handleFile = (selectedFile) => {
+  // Create preview when file changes
+  useEffect(() => {
+
+    if (!file) {
+      setPreview("");
+      return;
+    }
+
+    const url = URL.createObjectURL(file);
+    setPreview(url);
+
+    return () => URL.revokeObjectURL(url);
+
+  }, [file]);
+
+  // Upload file
+  const handleFileChange = (event) => {
+
+    const selectedFile = event.target.files?.[0];
 
     if (!selectedFile) return;
 
-    if (!["image/jpeg", "image/png"].includes(selectedFile.type)) {
-      setError("Please upload JPG or PNG images only.");
+    const isImage = selectedFile.type.startsWith("image/");
+    const isVideo = selectedFile.type.startsWith("video/");
+
+    if (!isImage && !isVideo) {
+      setError("Please select an image or video.");
+      return;
+    }
+
+    if (isImage && selectedFile.size > 20 * 1024 * 1024) {
+      setError("Image must be smaller than 20 MB.");
+      return;
+    }
+
+    if (isVideo && selectedFile.size > 100 * 1024 * 1024) {
+      setError("Video must be smaller than 100 MB.");
       return;
     }
 
     setFile(selectedFile);
-    setPreview(URL.createObjectURL(selectedFile));
     setResult(null);
     setError("");
   };
 
-  const handleUpload = async () => {
+  // Detect people
+  const handleDetection = async () => {
 
     if (!file) {
-      setError("Please select an image first.");
+      setError("Please upload an image or video first.");
       return;
     }
 
@@ -44,16 +71,58 @@ function UploadBox() {
 
     try {
 
-      const data = await detectImage(file);
+      const isVideo = file.type.startsWith("video/");
 
-      setResult(data);
-      setCacheBuster(Date.now());
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const endpoint = isVideo
+        ? "/detect/video"
+        : "/detect/image";
+
+      const response = await fetch(
+        `${API_BASE}${endpoint}`,
+        {
+          method: "POST",
+          body: formData
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.detail || "Detection failed"
+        );
+      }
+
+      if (!data.success) {
+        throw new Error("Detection was unsuccessful");
+      }
+
+      const outputPath = isVideo
+        ? data.output_video
+        : data.output_image;
+
+      if (!outputPath) {
+        throw new Error("Output file path was not returned");
+      }
+
+      setResult({
+        type: isVideo ? "video" : "image",
+        outputUrl: `${API_BASE}${outputPath}`,
+        personCount: isVideo
+          ? data.max_people_in_frame
+          : data.person_count,
+        details: data
+      });
 
     } catch (err) {
 
+      console.error("Detection error:", err);
+
       setError(
-        err.response?.data?.detail ||
-        "Detection failed. Check your backend server."
+        err.message || "Unable to process file"
       );
 
     } finally {
@@ -63,156 +132,244 @@ function UploadBox() {
     }
   };
 
+  const resetDetection = () => {
+    setFile(null);
+    setResult(null);
+    setError("");
+  };
+
   return (
 
-    <div className="home-upload-panel bg-[#111827] border border-gray-800
-                    rounded-2xl p-6 md:p-8">
+    <div className="w-full space-y-6">
 
-      <div className="flex items-center gap-3 mb-6">
+      {/* Upload section */}
 
-        <Scan className="text-blue-400" size={26} />
+      <div className="bg-[#111827] border border-gray-800
+                      rounded-2xl p-6">
 
-        <h2 className="text-xl font-bold">
+        <h2 className="text-xl font-bold mb-5">
           Person Detection
         </h2>
 
-      </div>
+        <label
+          className="flex flex-col items-center justify-center
+                     min-h-64 border-2 border-dashed
+                     border-gray-600 rounded-xl
+                     cursor-pointer hover:border-blue-500
+                     transition p-6 text-center"
+        >
 
-      <label
-        className="border-2 border-dashed border-gray-700
-                   hover:border-blue-500 rounded-xl p-10
-                   flex flex-col items-center justify-center
-                   cursor-pointer transition"
-      >
+          <div className="text-blue-400 text-5xl mb-4">
+            ↑
+          </div>
 
-        <Upload size={42} className="text-blue-400 mb-4" />
+          <h3 className="text-lg font-semibold">
+            Upload your crowd image or video
+          </h3>
 
-        <p className="text-gray-200 font-medium">
-          Upload your crowd image
-        </p>
-
-        <p className="text-gray-500 text-sm mt-2">
-          Drag and drop or browse files
-        </p>
-
-        <p className="text-gray-600 text-xs mt-2">
-          Supports JPG and PNG
-        </p>
-
-        <input
-          type="file"
-          accept="image/jpeg,image/png"
-          className="hidden"
-          onChange={(e) => handleFile(e.target.files[0])}
-        />
-
-      </label>
-
-      {preview && (
-
-        <div className="mt-5">
-
-          <p className="text-gray-400 mb-2">
-            Selected Image
+          <p className="text-gray-400 mt-2">
+            Drag and drop or browse files
           </p>
 
-          <img
-            src={preview}
-            alt="Uploaded crowd"
-            className="max-h-64 rounded-xl object-contain"
+          <p className="text-gray-500 text-sm mt-2">
+            JPG, PNG, MP4, AVI, MOV
+          </p>
+
+          <input
+            type="file"
+            accept="image/jpeg,image/png,video/mp4,video/avi,video/quicktime"
+            onChange={handleFileChange}
+            className="hidden"
           />
 
-        </div>
+        </label>
 
-      )}
+        {/* Selected file preview */}
 
-      {file && (
+        {file && !result && (
 
-        <p className="text-sm text-gray-400 mt-4">
-          Selected: {file.name}
-        </p>
+          <div className="mt-5 space-y-3">
 
-      )}
+            <p className="text-gray-300 text-sm">
+              Selected: {file.name}
+            </p>
 
-      <button
-        onClick={handleUpload}
-        disabled={loading || !file}
-        className="mt-6 w-full bg-blue-600
-                   hover:bg-blue-700 disabled:opacity-50
-                   py-3 rounded-lg font-semibold
-                   flex items-center justify-center gap-2"
-      >
+            {file.type.startsWith("image/") ? (
 
-        {loading ? (
-          <>
-            <LoaderCircle className="animate-spin" />
-            Processing Image...
-          </>
-        ) : (
-          <>
-            <Scan size={19} />
-            Detect People
-          </>
+              <img
+                src={preview}
+                alt="Selected crowd"
+                className="max-h-96 w-full object-contain
+                           rounded-xl bg-black"
+              />
+
+            ) : (
+
+              <video
+                src={preview}
+                controls
+                className="w-full max-h-96 rounded-xl bg-black"
+              />
+
+            )}
+
+          </div>
+
         )}
 
-      </button>
+        {/* Detect button */}
 
-      {error && (
+        <button
+          onClick={handleDetection}
+          disabled={!file || loading}
+          className="w-full mt-5 bg-blue-600
+                     hover:bg-blue-700
+                     disabled:bg-gray-600
+                     disabled:cursor-not-allowed
+                     text-white font-bold py-3
+                     rounded-lg transition"
+        >
 
-        <p className="text-red-400 mt-4">
-          {error}
-        </p>
+          {loading
+            ? "Processing..."
+            : "Detect People"}
 
-      )}
+        </button>
+
+        {loading && (
+
+          <p className="text-center text-blue-400 mt-3">
+            AI is processing your file. Please wait...
+          </p>
+
+        )}
+
+        {error && (
+
+          <div className="mt-4 bg-red-900/30
+                          border border-red-500
+                          text-red-300 rounded-lg p-3">
+            {error}
+          </div>
+
+        )}
+
+      </div>
+
+      {/* Detection result */}
 
       {result && (
 
-        <div className="mt-7 space-y-5">
+        <div className="bg-[#111827] border border-gray-800
+                        rounded-2xl p-6 space-y-5">
 
-          <div className="bg-gray-900 border border-gray-800
+          <h2 className="text-xl font-bold">
+            Detection Result
+          </h2>
+
+          {/* Count */}
+
+          <div className="bg-blue-900/30 border
+                          border-blue-500/30
                           rounded-xl p-5">
 
             <p className="text-gray-400 text-sm">
-              Total People Detected
+              {result.type === "image"
+                ? "People Detected"
+                : "Maximum People in a Frame"}
             </p>
 
-            <h1 className="text-4xl font-bold
-                           text-green-400 mt-2">
-              {result.person_count}
-            </h1>
-
-          </div>
-
-          <div>
-
-            <h3 className="font-semibold mb-3">
-              Detection Result
+            <h3 className="text-4xl font-bold text-blue-400">
+              {result.personCount}
             </h3>
 
+          </div>
+
+          {/* Output image */}
+
+          {result.type === "image" && (
+
             <img
-              src={`http://127.0.0.1:8000${result.output_image}?t=${cacheBuster}`}
-              alt="AI detected people"
-              className="w-full bg-[#111827] border border-gray-800
-             rounded-2xl p-6 md:p-8 shadow-xl"
+              src={result.outputUrl}
+              alt="Detected people"
+              className="w-full rounded-xl border
+                         border-gray-700"
             />
 
-            <a
-              href={`http://127.0.0.1:8000${result.output_image}`}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-block mt-3 text-blue-400 hover:underline"
-            >
-              View processed image
-            </a>
+          )}
 
-          </div>
+          {/* Output video */}
+
+          {result.type === "video" && (
+
+            <video
+              key={result.outputUrl}
+              src={result.outputUrl}
+              controls
+              playsInline
+              preload="metadata"
+              className="w-full rounded-xl
+                         border border-gray-700
+                         bg-black"
+            >
+              Your browser does not support video playback.
+            </video>
+
+          )}
+
+          {/* Video analytics */}
+
+          {result.type === "video" && (
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+
+              <div className="bg-[#080b12] rounded-lg p-4">
+                <p className="text-gray-400 text-sm">
+                  Unique tracking IDs
+                </p>
+                <p className="text-xl font-bold">
+                  {result.details.unique_person_count}
+                </p>
+              </div>
+
+              <div className="bg-[#080b12] rounded-lg p-4">
+                <p className="text-gray-400 text-sm">
+                  Average people per frame
+                </p>
+                <p className="text-xl font-bold">
+                  {result.details.average_people_per_frame}
+                </p>
+              </div>
+
+              <div className="bg-[#080b12] rounded-lg p-4">
+                <p className="text-gray-400 text-sm">
+                  Processed frames
+                </p>
+                <p className="text-xl font-bold">
+                  {result.details.processed_frames}
+                </p>
+              </div>
+
+            </div>
+
+          )}
+          <button
+            onClick={resetDetection}
+            className="w-full bg-gray-700
+                       hover:bg-gray-600
+                       text-white py-3 rounded-lg"
+          >
+            Upload Another File
+          </button>
 
         </div>
 
       )}
 
     </div>
+
   );
+
 }
 
 export default UploadBox;

@@ -1,6 +1,6 @@
 
-import UploadBox from "../components/UploadBox";
 
+import UploadBox from "../components/UploadBox";
 import {
   Users,
   Camera,
@@ -24,7 +24,7 @@ function Home() {
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 bg-green-500 rounded-full"></span>
             <span className="text-sm text-gray-400">
-              AI System Online
+              AI Online
             </span>
           </div>
 
@@ -42,16 +42,12 @@ function Home() {
           </p>
 
           <h1 className="text-4xl md:text-6xl font-bold">
-            Intelligent Crowd
-            <span className="text-blue-500">
-              {" "}Detection
-            </span>
+            Person Detection
           </h1>
 
           <p className="home-hero-description text-gray-400 max-w-2xl mx-auto mt-5 leading-8">
-            Detect, count and analyze people in crowded
-            images using artificial intelligence and
-            computer vision.
+            Detect and count people in photos, or track
+            them across videos with AI-powered computer vision.
           </p>
 
         </section>
@@ -98,7 +94,6 @@ function Home() {
         </footer>
 
       </main>
-
     </div>
   );
 }

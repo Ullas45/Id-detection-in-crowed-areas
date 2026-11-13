@@ -1,21 +1,52 @@
 
 import axios from "axios";
 
-const API = axios.create({
-  baseURL: "http://127.0.0.1:8000",
+const API_BASE_URL = "http://127.0.0.1:8000";
+
+const api = axios.create({
+    baseURL: API_BASE_URL,
+    timeout: 0
 });
 
 export const detectImage = async (file) => {
-  const formData = new FormData();
 
-  formData.append("file", file);
+    const formData = new FormData();
 
-  const response = await API.post(
-    "/detect/image",
-    formData
-  );
+    formData.append("file", file);
 
-  return response.data;
+    const response = await api.post(
+        "/detect/image",
+        formData
+    );
+
+    return response.data;
 };
 
-export default API;
+
+export const detectVideo = async (file) => {
+
+    const formData = new FormData();
+
+    formData.append("file", file);
+
+    const response = await api.post(
+        "/detect/video",
+        formData
+    );
+
+    return response.data;
+};
+
+
+export const getOutputUrl = (path) => {
+
+    if (!path) return "";
+
+    if (path.startsWith("http")) {
+        return path;
+    }
+
+    return `${API_BASE_URL}${path}`;
+};
+
+export default api;

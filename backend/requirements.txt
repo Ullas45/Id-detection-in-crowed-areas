@@ -3,3 +3,10 @@ uvicorn==0.34.0
 opencv-python==5.0.0.93
 numpy==2.3.5
 python-multipart==0.0.20
+fastapi
+uvicorn
+python-multipart
+opencv-python
+ultralytics
+imageio
+imageio-ffmpeg
